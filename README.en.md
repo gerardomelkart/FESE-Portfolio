@@ -8,7 +8,7 @@ An executable portfolio project that transforms monthly CSV/XLSX submissions int
 
 **All centers, codes and counts are fictional.** Independently implemented demonstration, not official software. No institutional source code, repository history, inputs, templates, branding, contact lists or deployment configuration is included.
 
-![Synthetic receipt](docs/receipt-preview.png)
+![Synthetic receipt](docs/comprobante-demo-es-v2.png)
 
 ## Quick start
 
@@ -35,7 +35,7 @@ The demo loads January–March 2026 for Aurora, Boreal and Coral, intentionally 
 | `reports/*.pdf` | Nine fictional center/month receipts |
 | `reports/audit.json` | Operation metadata, input hashes and warnings |
 
-[Sample Excel](docs/annual-2026.xlsx) · [Sample PDF](docs/2026-03-Aurora.pdf)
+[Sample Excel](docs/annual-2026.xlsx) · [Sample PDF](docs/comprobante-demo-es-v2.pdf)
 
 ## Input and commands
 

@@ -8,7 +8,7 @@ Proyecto ejecutable de portafolio que transforma entregas mensuales CSV/XLSX en 
 
 **Los centros, códigos y cifras son ficticios.** Implementación independiente de demostración, sin código ni historial institucional, archivos reales, formatos oficiales, logotipos, listas de correos o configuración de infraestructura.
 
-![Comprobante sintético](docs/receipt-preview.png)
+![Comprobante sintético](docs/comprobante-demo-es-v2.png)
 
 ## Ejecución rápida
 
@@ -35,7 +35,7 @@ La demo carga enero–marzo de 2026 para Aurora, Boreal y Coral, repite delibera
 | `reports/*.pdf` | Nueve comprobantes ficticios por centro y mes |
 | `reports/audit.json` | Metadatos, hashes y alertas |
 
-[Excel de ejemplo](docs/annual-2026.xlsx) · [PDF de ejemplo](docs/2026-03-Aurora.pdf)
+[Excel de ejemplo](docs/annual-2026.xlsx) · [PDF de ejemplo](docs/comprobante-demo-es-v2.pdf)
 
 ## Carga y validación
 
