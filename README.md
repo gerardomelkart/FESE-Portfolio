@@ -1,18 +1,18 @@
-# Monthly Operations ETL · FESE-Portfolio
+# ETL de operaciones mensuales · FESE-Portfolio
 
-**Python · SQLite · Excel · PDF · Data quality · Audit trails**
+**Python · SQLite · Excel · PDF · Calidad de datos · Auditoría**
 
-[Español](README.es.md) · [Architecture](docs/ARCHITECTURE.md)
+[English](README.en.md) · [Arquitectura](docs/ARCHITECTURE.md)
 
-An executable portfolio project that transforms monthly CSV/XLSX submissions into validated historical data, an annual Excel report and individual PDF receipts. Demonstrates repeated-period detection, review mode, reproducible data and reversible corrections.
+Proyecto ejecutable de portafolio que transforma entregas mensuales CSV/XLSX en un histórico validado, un reporte anual Excel y comprobantes PDF. Demuestra detección de periodos repetidos, revisión previa y correcciones reversibles.
 
-**All centers, codes and counts are fictional.** Independently implemented demonstration, not official software. No institutional source code, repository history, inputs, templates, branding, contact lists or deployment configuration is included.
+**Los centros, códigos y cifras son ficticios.** Implementación independiente de demostración, sin código ni historial institucional, archivos reales, formatos oficiales, logotipos, listas de correos o configuración de infraestructura.
 
-![Synthetic receipt](docs/receipt-preview.png)
+![Comprobante sintético](docs/receipt-preview.png)
 
-## Quick start
+## Ejecución rápida
 
-Python 3.11+ on Windows, Linux or macOS. No Excel installation, Outlook or external database required.
+Python 3.11 o superior. Funciona en Windows, Linux y macOS; no requiere Excel instalado, Outlook ni servidor de base de datos.
 
 ```powershell
 git clone https://github.com/gerardomelkart/FESE-Portfolio.git
@@ -23,23 +23,23 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Linux/macOS: substitute `.venv/bin/python`. With an activated environment use `python demo.py`.
+En Linux/macOS utiliza `.venv/bin/python`. Con el entorno activado basta `python demo.py`.
 
-The demo loads January–March 2026 for Aurora, Boreal and Coral, intentionally repeats Aurora's January distribution in March, records a warning, then applies a synthetic +17 correction. Choose a fresh `--workdir` to rerun; existing history is never reset.
+La demo carga enero–marzo de 2026 para Aurora, Boreal y Coral, repite deliberadamente enero de Aurora en marzo para mostrar la alerta y aplica una corrección sintética de +17. Para repetirla utiliza otro directorio: `python demo.py --workdir work/otra-demo`. No borra históricos existentes.
 
-| Output under `work/demo/` | Purpose |
+| Archivo en `work/demo/` | Contenido |
 | --- | --- |
-| `history.sqlite` | 36 unique monthly records and four audited operations |
-| `backups/*.sqlite` | Complete database snapshots before applied loads/corrections |
-| `reports/annual-2026.xlsx` | Monthly summary, chart, records and audit sheet |
-| `reports/*.pdf` | Nine fictional center/month receipts |
-| `reports/audit.json` | Operation metadata, input hashes and warnings |
+| `history.sqlite` | 36 registros y cuatro operaciones auditadas |
+| `backups/*.sqlite` | Respaldos completos antes de cargas/correcciones |
+| `reports/annual-2026.xlsx` | Resumen, gráfica, registros y auditoría |
+| `reports/*.pdf` | Nueve comprobantes ficticios por centro y mes |
+| `reports/audit.json` | Metadatos, hashes y alertas |
 
-[Sample Excel](docs/annual-2026.xlsx) · [Sample PDF](docs/2026-03-Aurora.pdf)
+[Excel de ejemplo](docs/annual-2026.xlsx) · [PDF de ejemplo](docs/2026-03-Aurora.pdf)
 
-## Input and commands
+## Carga y validación
 
-CSV or the active XLSX sheet must have exactly `period,center,code,total` in that order. Every file contains all 12 pairs: centers `Aurora`, `Boreal`, `Coral` × codes `A01`, `A02`, `B01`, `B02`. Totals must be integers from 0 to 1,000,000,000. Monthly sums are calculated from validated rows.
+Columnas exactas: `period,center,code,total`, en ese orden. Se acepta CSV o la hoja activa de XLSX sin depender de su nombre. Cada archivo debe contener las 12 combinaciones de centros `Aurora`, `Boreal`, `Coral` y códigos `A01`, `A02`, `B01`, `B02`. Totales enteros entre 0 y 1,000,000,000; las sumas se calculan de los registros validados.
 
 ```powershell
 python etl.py generate --output examples
@@ -48,17 +48,19 @@ python etl.py load examples/2026-01.csv --period 2026-01 --apply
 python etl.py report --year 2026
 ```
 
-Without `--apply`, load/undo only preview business data changes; workspace initialization may create an empty database/schema. Identical loads are no-ops without extra audit entries. Changed months require `--correction` and a non-empty `--reason`.
+Sin `--apply` sólo se revisan cambios de datos; la inicialización puede crear una base vacía y su esquema. Una carga idéntica no duplica registros ni auditorías. Se rechazan periodos inválidos, centros/códigos desconocidos, combinaciones faltantes, duplicados y cifras incorrectas.
 
-## Corrections and recovery
+Cada distribución completa por centro se compara con **todos sus meses anteriores**, aunque no sean consecutivos. Las coincidencias exactas generan alertas sin rechazar automáticamente datos legítimos.
 
-After loading the original March file into the default workspace:
+## Corrección y reversión
+
+Para reemplazar un mes existente se requieren `--correction` y un motivo. Primero debe estar cargado el marzo original en el directorio predeterminado:
 
 ```powershell
-python etl.py load examples/2026-03-corrected.csv --period 2026-03 --correction --reason "Synthetic revision" --apply
+python etl.py load examples/2026-03-corrected.csv --period 2026-03 --correction --reason "Correccion sintetica" --apply
 ```
 
-After `demo.py`, correction ID 4 can be previewed and reversed:
+Después de ejecutar `demo.py`, la corrección tiene ID 4:
 
 ```powershell
 python etl.py --workdir work/demo undo 4
@@ -66,17 +68,12 @@ python etl.py --workdir work/demo undo 4 --apply
 python etl.py --workdir work/demo report --year 2026
 ```
 
-Only the selected month changes in a SQLite transaction. Audit retains before/after records and the SHA-256 input hash. Undo refuses to overwrite a period changed since the selected audit entry; undo is itself audited. Regenerate reports after changes. Full snapshots support offline database recovery; undo provides selective guarded reversal.
+Se cambia únicamente el mes seleccionado en una transacción. La bitácora conserva valores anteriores/posteriores y hash SHA-256 del insumo. La reversión se bloquea si hubo cambios posteriores en el periodo y genera una nueva auditoría. Regenera los reportes después de corregir o revertir. Los respaldos sirven para recuperación completa fuera de línea y `undo` para reversión selectiva validada.
 
-## Quality and design
+## Pruebas y alcance
 
-- Rejects invalid periods, unknown centers/codes, duplicate pairs, incomplete coverage and invalid counts.
-- Compares each center's full distribution against **all earlier stored months**, including nonadjacent ones. Exact matches warn but do not automatically reject legitimate data.
-- Nine behavioral tests cover CSV/XLSX validation, idempotency, nonadjacent repetitions, correction isolation, guarded undo, reproducibility and report reconciliation.
-- GitHub Actions is configured for Python 3.11, 3.12 and 3.13.
+Nueve pruebas cubren validaciones, equivalencia CSV/XLSX, cargas sin duplicación, repetición de meses no consecutivos, aislamiento de correcciones, reversión, generación reproducible y conciliación del Excel. GitHub Actions está configurado para Python 3.11, 3.12 y 3.13.
 
-## Scope
+Demo local con catálogos ficticios fijos. No envía correos, no incluye autenticación ni interfaz web y no se conecta a sistemas institucionales. Los reportes se generan por separado; la auditoría SQLite no es inalterable. Los datos son agregados mensuales.
 
-Small local CLI with fixed fictional catalogs. No email sending, web UI, authentication service or institutional integration. Reports are derived products generated separately from transactions. SQLite audit is operational history, not a tamper-proof compliance ledger. Data is monthly aggregates, not individual events.
-
-No reuse license is granted; public visibility alone does not grant reuse rights. Dependencies retain their own licenses.
+No se otorga licencia de reutilización; la visibilidad pública por sí sola no la concede. Las dependencias conservan sus licencias.

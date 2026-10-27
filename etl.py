@@ -168,7 +168,10 @@ def report(root, year):
     from openpyxl import Workbook
     from openpyxl.chart import BarChart, Reference
     from openpyxl.styles import Font, PatternFill
-    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.pagesizes import A5
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    import reportlab
     from reportlab.pdfgen import canvas
     if not 1 <= year <= 9999:
         raise ValueError('Invalid year')
@@ -212,24 +215,54 @@ def report(root, year):
         # Escape spreadsheet formula prefixes in free text.
         log.append(["'"+v if isinstance(v,str) and v.startswith(('=', '+', '-', '@')) else v for v in row])
     book.save(out / f'annual-{year}.xlsx')
+    # Embed the fonts distributed with ReportLab; no OS font substitution.
+    font_dir = Path(reportlab.__file__).parent / 'fonts'
+    pdfmetrics.registerFont(TTFont('DemoSans', str(font_dir / 'Vera.ttf')))
+    pdfmetrics.registerFont(TTFont('DemoBold', str(font_dir / 'VeraBd.ttf')))
     for period in sorted({r[0] for r in rows}):
         for center in CENTERS:
-            pdf = canvas.Canvas(str(out / f'{period}-{center}.pdf'), pagesize=A4)
-            pdf.setTitle(f'Synthetic receipt {period} {center}')
-            pdf.setFont('Helvetica-Bold', 20)
-            pdf.drawString(50, 785, 'Monthly Operations')
-            pdf.setFont('Helvetica', 11)
-            pdf.drawString(50, 758, 'SYNTHETIC DATA / PORTFOLIO DEMO')
-            pdf.drawString(50, 725, f'Period: {period}    Fictional center: {center}')
-            y = 680
+            pdf = canvas.Canvas(str(out / f'{period}-{center}.pdf'), pagesize=A5)
+            width, height = A5
+            pdf.setTitle(f'Comprobante de demostración - {period} - {center}')
+            pdf.setAuthor('FESE-Portfolio')
+            pdf.setFillColorRGB(0.08, 0.23, 0.31)
+            pdf.rect(0, height-112, width, 112, fill=1, stroke=0)
+            pdf.setFillColorRGB(1, 1, 1)
+            pdf.setFont('DemoBold', 19)
+            pdf.drawString(30, height-45, 'Operaciones mensuales')
+            pdf.setFont('DemoSans', 9)
+            pdf.drawString(30, height-70, 'COMPROBANTE DE DEMOSTRACIÓN')
+            pdf.setFillColorRGB(0.08, 0.23, 0.31)
+            pdf.setFont('DemoBold', 11)
+            pdf.drawString(30, height-150, f'Centro ficticio: {center}')
+            pdf.setFont('DemoSans', 10)
+            pdf.drawString(30, height-174, f'Periodo: {period}')
+            y = height-215
+            pdf.setFillColorRGB(0.90, 0.94, 0.95)
+            pdf.rect(30, y-12, width-60, 30, fill=1, stroke=0)
+            pdf.setFillColorRGB(0.08, 0.23, 0.31)
+            pdf.setFont('DemoBold', 10)
+            pdf.drawString(42, y, 'Código')
+            pdf.drawRightString(width-42, y, 'Cantidad')
             selected = [r for r in rows if r[0] == period and r[1] == center]
-            for _,_,code,total in selected:
-                pdf.drawString(65,y,f'{code}: {total:,}')
-                y -= 28
-            pdf.setFont('Helvetica-Bold', 13)
-            pdf.drawString(65,y-10,f'Total: {sum(r[3] for r in selected):,}')
-            pdf.setFont('Helvetica', 9)
-            pdf.drawString(50, 65, 'Fictional receipt. Not an official record. Regenerate after corrections or undo.')
+            pdf.setFont('DemoSans', 11)
+            for _, _, code, total in selected:
+                y -= 38
+                pdf.drawString(42, y, code)
+                pdf.drawRightString(width-42, y, f'{total:,}')
+                pdf.setStrokeColorRGB(0.86, 0.90, 0.92)
+                pdf.line(30, y-13, width-30, y-13)
+            y -= 48
+            pdf.setFillColorRGB(0.08, 0.23, 0.31)
+            pdf.roundRect(30, y-15, width-60, 43, 5, fill=1, stroke=0)
+            pdf.setFillColorRGB(1, 1, 1)
+            pdf.setFont('DemoBold', 13)
+            pdf.drawString(42, y, 'Total mensual')
+            pdf.drawRightString(width-42, y, f'{sum(r[3] for r in selected):,}')
+            pdf.setFillColorRGB(0.32, 0.38, 0.42)
+            pdf.setFont('DemoSans', 8)
+            pdf.drawString(30, 65, 'Datos sintéticos. No es un documento oficial.')
+            pdf.drawString(30, 50, 'Regenerar después de corregir o revertir información.')
             pdf.save()
     (out / 'audit.json').write_text(json.dumps(audit, indent=2), encoding='utf-8')
     return str(out)

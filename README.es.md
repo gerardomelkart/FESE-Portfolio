@@ -2,7 +2,7 @@
 
 **Python · SQLite · Excel · PDF · Calidad de datos · Auditoría**
 
-[English](README.md) · [Arquitectura](docs/ARCHITECTURE.md)
+[English](README.en.md) · [Arquitectura](docs/ARCHITECTURE.md)
 
 Proyecto ejecutable de portafolio que transforma entregas mensuales CSV/XLSX en un histórico validado, un reporte anual Excel y comprobantes PDF. Demuestra detección de periodos repetidos, revisión previa y correcciones reversibles.
 
